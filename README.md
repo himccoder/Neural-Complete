@@ -1,7 +1,7 @@
 # Neural-Complete
 
 ## Himnish's Report Section
-This project implements a character-level Recurrent Neural Network (RNN) from scratch using PyTorch. Unlike standard approaches that leverage high-level RNN modules ('nn.RNN', 'nn.LSTM', etc.), this implementation manually defines and trains the core components of an RNN at the tensor level. The goal is to model character sequences in text and learn to predict the next character given a sequence of preceding characters.
+This project implements a character-level Recurrent Neural Network (RNN) from scratch using PyTorch. Unlike standard approaches that leverage high-level RNN modules (nn.RNN, nn.LSTM, etc.), this implementation manually defines and trains the core components of an RNN at the tensor level. The goal is to model character sequences in text and learn to predict the next character given a sequence of preceding characters.
 
 By learning patterns at the character level, the model can be used for text generation, such as composing words and sentences in the style of the training corpus.
 
