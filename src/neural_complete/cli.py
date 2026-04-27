@@ -1,9 +1,20 @@
 import argparse
+import json
+from pathlib import Path
 
 import torch
 
 from neural_complete.generation import generate_text
-from neural_complete.training import load_checkpoint, train_char_rnn, train_mini_gpt
+from neural_complete.training import count_parameters, load_checkpoint, train_char_rnn, train_mini_gpt
+
+
+def parse_checkpoint_arg(value: str) -> tuple[str, str]:
+    if "=" in value:
+        name, path = value.split("=", 1)
+        return name.strip(), path.strip()
+
+    path = value.strip()
+    return Path(path).stem, path
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--embedding-dim", type=int, default=128)
     train.add_argument("--learning-rate", type=float, default=1e-3)
     train.add_argument("--train-ratio", type=float, default=0.9)
+    train.add_argument("--metrics-output", default=None, help="Optional JSON path for training metrics.")
     train.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
 
     train_gpt = subparsers.add_parser("train-gpt", help="Train a small decoder-only Transformer.")
@@ -36,6 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_gpt.add_argument("--dropout", type=float, default=0.1)
     train_gpt.add_argument("--learning-rate", type=float, default=3e-4)
     train_gpt.add_argument("--train-ratio", type=float, default=0.9)
+    train_gpt.add_argument("--metrics-output", default=None, help="Optional JSON path for training metrics.")
     train_gpt.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
 
     generate = subparsers.add_parser("generate", help="Generate text from a saved checkpoint.")
@@ -47,6 +60,22 @@ def build_parser() -> argparse.ArgumentParser:
     generate.add_argument("--top-p", type=float, default=None)
     generate.add_argument("--greedy", action="store_true")
     generate.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+
+    compare = subparsers.add_parser("compare", help="Compare checkpoints on metrics and generated text.")
+    compare.add_argument(
+        "--checkpoint",
+        action="append",
+        required=True,
+        help="Checkpoint to compare. Use name=path or just path. Repeat for multiple models.",
+    )
+    compare.add_argument("--prompt", required=True)
+    compare.add_argument("--max-new-chars", type=int, default=120)
+    compare.add_argument("--temperature", type=float, default=1.0)
+    compare.add_argument("--top-k", type=int, default=None)
+    compare.add_argument("--top-p", type=float, default=None)
+    compare.add_argument("--greedy", action="store_true")
+    compare.add_argument("--output-json", default=None, help="Optional path to save comparison results.")
+    compare.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
 
     return parser
 
@@ -69,6 +98,7 @@ def main() -> None:
             learning_rate=args.learning_rate,
             train_ratio=args.train_ratio,
             device=device,
+            metrics_output=args.metrics_output,
         )
         print(f"saved_checkpoint={args.output}")
         print(metrics)
@@ -89,6 +119,7 @@ def main() -> None:
             learning_rate=args.learning_rate,
             train_ratio=args.train_ratio,
             device=device,
+            metrics_output=args.metrics_output,
         )
         print(f"saved_checkpoint={args.output}")
         print(metrics)
@@ -111,6 +142,53 @@ def main() -> None:
         print(text)
         if metrics:
             print(f"\ncheckpoint_metrics={metrics}")
+
+    if args.command == "compare":
+        results = []
+        for checkpoint_arg in args.checkpoint:
+            name, path = parse_checkpoint_arg(checkpoint_arg)
+            model, vocab, sequence_length, metrics = load_checkpoint(path, device)
+            text = generate_text(
+                model=model,
+                vocab=vocab,
+                prompt=args.prompt,
+                max_new_chars=args.max_new_chars,
+                sequence_length=sequence_length,
+                device=device,
+                temperature=args.temperature,
+                top_k=args.top_k,
+                top_p=args.top_p,
+                greedy=args.greedy,
+            )
+            result = {
+                "name": name,
+                "checkpoint": path,
+                "model_type": model.config().get("model_type", "unknown"),
+                "parameter_count": count_parameters(model),
+                "metrics": metrics,
+                "generated_text": text,
+            }
+            results.append(result)
+
+        for result in results:
+            metrics = result["metrics"]
+            print(f"\n== {result['name']} ({result['model_type']}) ==")
+            print(f"checkpoint={result['checkpoint']}")
+            print(f"parameters={result['parameter_count']}")
+            if metrics:
+                print(
+                    "metrics="
+                    f"train_loss={metrics.get('train_loss')}, "
+                    f"val_loss={metrics.get('val_loss')}, "
+                    f"val_perplexity={metrics.get('val_perplexity')}"
+                )
+            print(f"generated_text={result['generated_text']}")
+
+        if args.output_json:
+            output_path = Path(args.output_json)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as file:
+                json.dump({"prompt": args.prompt, "results": results}, file, indent=2)
 
 
 if __name__ == "__main__":

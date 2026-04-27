@@ -18,6 +18,8 @@ The RNN baseline shows the limits of simple recurrent models, while the Mini-GPT
 - Autoregressive text completion with temperature, greedy decoding, top-k sampling, and nucleus sampling.
 - Checkpoint-based training and generation.
 - LLM-style evaluation using validation loss and perplexity.
+- JSON experiment logs for training configuration, model size, and metrics.
+- Checkpoint comparison from the command line using the same prompt and decoding settings.
 
 ## Current Structure
 
@@ -62,6 +64,7 @@ neural-complete train-rnn --data-file warandpeace.txt --epochs 5 --output checkp
 ```
 
 The checkpoint stores the model weights, vocabulary, sequence length, and final metrics.
+Training also writes a metrics file next to the checkpoint, such as `checkpoints/char_rnn.metrics.json`.
 
 ## Train the Mini-GPT Transformer
 
@@ -114,13 +117,29 @@ neural-complete generate \
 
 The same generation command works for RNN and Mini-GPT checkpoints because both expose the same language-modeling interface.
 
+## Compare Checkpoints
+
+After training both models, compare their metrics and generated text with the same prompt:
+
+```bash
+neural-complete compare \
+  --checkpoint rnn=checkpoints/char_rnn.pt \
+  --checkpoint gpt=checkpoints/mini_gpt.pt \
+  --prompt "abc" \
+  --max-new-chars 120 \
+  --temperature 0.8 \
+  --top-k 20 \
+  --output-json experiments/comparison.json
+```
+
+The comparison output includes each model's checkpoint path, model type, parameter count, saved metrics, and generated text.
+
 ## Next Steps
 
-- Compare RNN and Mini-GPT results on the same text corpus.
 - Add plots for training loss, validation loss, and perplexity.
-- Save experiment metrics to JSON for easier comparison.
 - Add attention visualization for the Mini-GPT model.
 - Add subword tokenization experiments.
+- Add a small demo interface for training results and text generation.
 
 ## Original Experiment Summary
 

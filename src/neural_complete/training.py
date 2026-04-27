@@ -1,8 +1,8 @@
+import json
 from pathlib import Path
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from tqdm import tqdm
 
 from neural_complete.data import Vocabulary, load_text, make_dataloaders, split_token_ids
@@ -29,6 +29,47 @@ def save_checkpoint(
         },
         checkpoint_path,
     )
+
+
+def count_parameters(model: torch.nn.Module) -> int:
+    return sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
+
+
+def default_metrics_path(output_path: str) -> str:
+    checkpoint_path = Path(output_path)
+    return str(checkpoint_path.with_suffix(".metrics.json"))
+
+
+def save_metrics_json(
+    path: str,
+    model: CharRNN | MiniGPT,
+    data_file: str | None,
+    sequence_length: int,
+    batch_size: int,
+    stride: int,
+    learning_rate: float,
+    train_ratio: float,
+    history: list[dict[str, float]],
+    final_metrics: dict[str, float],
+) -> None:
+    metrics_path = Path(path)
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "model_config": model.config(),
+        "parameter_count": count_parameters(model),
+        "data_file": data_file or "built-in alphabet demo",
+        "training_config": {
+            "sequence_length": sequence_length,
+            "batch_size": batch_size,
+            "stride": stride,
+            "learning_rate": learning_rate,
+            "train_ratio": train_ratio,
+        },
+        "history": history,
+        "final_metrics": final_metrics,
+    }
+    with open(metrics_path, "w", encoding="utf-8") as file:
+        json.dump(payload, file, indent=2)
 
 
 def build_model(model_config: dict, device: torch.device) -> CharRNN | MiniGPT:
@@ -63,6 +104,7 @@ def train_language_model(
     learning_rate: float,
     train_ratio: float,
     device: torch.device,
+    metrics_output: str | None = None,
 ) -> dict[str, float]:
     text = load_text(data_file)
     vocab = Vocabulary.from_text(text)
@@ -74,9 +116,10 @@ def train_language_model(
 
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
     metrics: dict[str, float] = {}
+    history: list[dict[str, float]] = []
     for epoch in range(epochs):
         model.train()
         total_loss = 0.0
@@ -99,17 +142,32 @@ def train_language_model(
         train_loss = total_loss / len(train_loader)
         val_loss, val_perplexity = evaluate_loss(model, val_loader, criterion, device)
         metrics = {
+            "epoch": float(epoch + 1),
             "train_loss": train_loss,
             "val_loss": val_loss,
             "val_perplexity": val_perplexity,
             "vocab_size": float(vocab.size),
+            "parameter_count": float(count_parameters(model)),
         }
+        history.append(metrics)
         print(
             f"epoch={epoch + 1} train_loss={train_loss:.4f} "
             f"val_loss={val_loss:.4f} val_perplexity={val_perplexity:.2f}"
         )
 
     save_checkpoint(output_path, model, vocab, sequence_length, metrics)
+    save_metrics_json(
+        path=metrics_output or default_metrics_path(output_path),
+        model=model,
+        data_file=data_file,
+        sequence_length=sequence_length,
+        batch_size=batch_size,
+        stride=stride,
+        learning_rate=learning_rate,
+        train_ratio=train_ratio,
+        history=history,
+        final_metrics=metrics,
+    )
     return metrics
 
 
@@ -125,6 +183,7 @@ def train_char_rnn(
     learning_rate: float,
     train_ratio: float,
     device: torch.device,
+    metrics_output: str | None = None,
 ) -> dict[str, float]:
     text = load_text(data_file)
     vocab = Vocabulary.from_text(text)
@@ -140,6 +199,7 @@ def train_char_rnn(
         learning_rate=learning_rate,
         train_ratio=train_ratio,
         device=device,
+        metrics_output=metrics_output,
     )
 
 
@@ -157,6 +217,7 @@ def train_mini_gpt(
     learning_rate: float,
     train_ratio: float,
     device: torch.device,
+    metrics_output: str | None = None,
 ) -> dict[str, float]:
     text = load_text(data_file)
     vocab = Vocabulary.from_text(text)
@@ -179,4 +240,5 @@ def train_mini_gpt(
         learning_rate=learning_rate,
         train_ratio=train_ratio,
         device=device,
+        metrics_output=metrics_output,
     )
