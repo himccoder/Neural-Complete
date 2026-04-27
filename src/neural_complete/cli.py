@@ -3,7 +3,7 @@ import argparse
 import torch
 
 from neural_complete.generation import generate_text
-from neural_complete.training import load_checkpoint, train_char_rnn
+from neural_complete.training import load_checkpoint, train_char_rnn, train_mini_gpt
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,6 +22,21 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--learning-rate", type=float, default=1e-3)
     train.add_argument("--train-ratio", type=float, default=0.9)
     train.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+
+    train_gpt = subparsers.add_parser("train-gpt", help="Train a small decoder-only Transformer.")
+    train_gpt.add_argument("--data-file", default=None, help="Path to a text corpus. Defaults to alphabet demo data.")
+    train_gpt.add_argument("--output", default="checkpoints/mini_gpt.pt", help="Where to save the checkpoint.")
+    train_gpt.add_argument("--epochs", type=int, default=5)
+    train_gpt.add_argument("--batch-size", type=int, default=64)
+    train_gpt.add_argument("--sequence-length", type=int, default=64)
+    train_gpt.add_argument("--stride", type=int, default=3)
+    train_gpt.add_argument("--embedding-dim", type=int, default=128)
+    train_gpt.add_argument("--num-heads", type=int, default=4)
+    train_gpt.add_argument("--num-layers", type=int, default=4)
+    train_gpt.add_argument("--dropout", type=float, default=0.1)
+    train_gpt.add_argument("--learning-rate", type=float, default=3e-4)
+    train_gpt.add_argument("--train-ratio", type=float, default=0.9)
+    train_gpt.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
 
     generate = subparsers.add_parser("generate", help="Generate text from a saved checkpoint.")
     generate.add_argument("--checkpoint", default="checkpoints/char_rnn.pt")
@@ -51,6 +66,26 @@ def main() -> None:
             stride=args.stride,
             hidden_size=args.hidden_size,
             embedding_dim=args.embedding_dim,
+            learning_rate=args.learning_rate,
+            train_ratio=args.train_ratio,
+            device=device,
+        )
+        print(f"saved_checkpoint={args.output}")
+        print(metrics)
+        return
+
+    if args.command == "train-gpt":
+        metrics = train_mini_gpt(
+            data_file=args.data_file,
+            output_path=args.output,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            sequence_length=args.sequence_length,
+            stride=args.stride,
+            embedding_dim=args.embedding_dim,
+            num_heads=args.num_heads,
+            num_layers=args.num_layers,
+            dropout=args.dropout,
             learning_rate=args.learning_rate,
             train_ratio=args.train_ratio,
             device=device,

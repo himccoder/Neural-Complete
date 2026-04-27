@@ -5,11 +5,12 @@ Neural Complete is evolving from a character-level RNN assignment into a compact
 ## What This Project Demonstrates
 
 - A manually implemented character-level RNN in PyTorch.
+- A compact GPT-style decoder-only Transformer implemented in PyTorch.
 - Reusable dataset, vocabulary, training, evaluation, and generation modules.
 - Autoregressive text completion with temperature, greedy decoding, top-k sampling, and nucleus sampling.
 - Checkpoint-based training and generation.
 - LLM-style evaluation using validation loss and perplexity.
-- A clear roadmap toward a Mini-GPT Transformer and RAG demo.
+- A clear roadmap toward tokenizer experiments, model comparison, and RAG.
 
 ## Current Structure
 
@@ -19,7 +20,7 @@ src/neural_complete/
   data.py         # Text cleaning, vocabulary, dataset, and dataloaders
   evaluation.py   # Validation loss and perplexity
   generation.py   # Autoregressive text generation
-  models.py       # Scratch character RNN
+  models.py       # Scratch character RNN and Mini-GPT Transformer
   sampling.py     # Greedy, temperature, top-k, and top-p decoding
   training.py     # Training loop and checkpoint utilities
 
@@ -55,6 +56,37 @@ neural-complete train-rnn --data-file warandpeace.txt --epochs 5 --output checkp
 
 The checkpoint stores the model weights, vocabulary, sequence length, and final metrics.
 
+## Train the Mini-GPT Transformer
+
+Train a compact decoder-only Transformer on the built-in alphabet demo:
+
+```bash
+neural-complete train-gpt --epochs 5 --output checkpoints/mini_gpt.pt
+```
+
+Train on your own corpus:
+
+```bash
+neural-complete train-gpt \
+  --data-file warandpeace.txt \
+  --epochs 5 \
+  --sequence-length 128 \
+  --embedding-dim 128 \
+  --num-heads 4 \
+  --num-layers 4 \
+  --output checkpoints/warpeace_gpt.pt
+```
+
+The Mini-GPT model includes:
+
+- Token embeddings.
+- Learned positional embeddings.
+- Multi-head causal self-attention.
+- Feed-forward Transformer blocks.
+- Residual connections.
+- LayerNorm.
+- Autoregressive generation.
+
 ## Generate Text
 
 ```bash
@@ -73,6 +105,8 @@ neural-complete generate \
   --top-p 0.9
 ```
 
+The same generation command works for RNN and Mini-GPT checkpoints because both expose the same language-modeling interface.
+
 ## Roadmap Toward a Strong CV Project
 
 ### Phase 1: Productionize the RNN Baseline
@@ -86,9 +120,9 @@ Useful next improvements:
 - Add unit tests for tokenization, sampling, and generation.
 - Add experiment configs for different corpora.
 
-### Phase 2: Add a Mini-GPT Transformer
+### Phase 2: Expand the Mini-GPT Transformer
 
-Implement a decoder-only Transformer from scratch:
+This phase is now started. The project has a decoder-only Transformer with:
 
 - Token embeddings and positional embeddings.
 - Multi-head causal self-attention.
@@ -96,7 +130,12 @@ Implement a decoder-only Transformer from scratch:
 - Residual connections and LayerNorm.
 - Autoregressive generation with the same decoding controls.
 
-This should become the main technical centerpiece of the repo.
+Useful next improvements:
+
+- Add attention visualization.
+- Add model parameter counts and training-time comparisons.
+- Add a stronger experiment on a real corpus.
+- Add a writeup comparing RNN limitations with Transformer attention.
 
 ### Phase 3: Add Tokenization Experiments
 
@@ -145,7 +184,7 @@ Use Streamlit or FastAPI to expose:
 
 Suggested CV bullet:
 
-> Built an end-to-end PyTorch language-modeling project evolving from a scratch character RNN to LLM-style text generation, including autoregressive decoding, top-k/top-p sampling, perplexity evaluation, checkpointing, and a planned Mini-GPT Transformer and RAG pipeline.
+> Built an end-to-end PyTorch language-modeling project evolving from a scratch character RNN to a compact GPT-style Transformer, including causal self-attention, autoregressive decoding, top-k/top-p sampling, perplexity evaluation, checkpointing, and a roadmap toward tokenization experiments and RAG.
 
 ## Original Experiment Summary
 
