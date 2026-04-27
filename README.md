@@ -1,8 +1,16 @@
 # Neural Complete
 
-Neural Complete is evolving from a character-level RNN assignment into a compact language-modeling portfolio project. The goal is to show the path from classic sequence modeling to modern LLM concepts: tokenization, autoregressive generation, decoding strategies, evaluation, Transformers, and eventually retrieval-augmented generation.
+Neural Complete is a small language-modeling project built in PyTorch. It explores how neural networks learn text patterns and generate new text one character at a time.
 
-## What This Project Demonstrates
+The project starts with a manually implemented character-level RNN and extends it with a compact GPT-style decoder-only Transformer. Both models are trained to predict the next character in a sequence, then used for autoregressive text generation. This makes the project useful for understanding the connection between classic sequence models and modern language model ideas such as causal self-attention, positional embeddings, decoding strategies, and perplexity.
+
+At a high level, the project answers this question:
+
+> Given some text, can a neural network learn its character patterns well enough to continue a prompt?
+
+The RNN baseline shows the limits of simple recurrent models, while the Mini-GPT model introduces the Transformer architecture used by modern LLMs.
+
+## What This Project Includes
 
 - A manually implemented character-level RNN in PyTorch.
 - A compact GPT-style decoder-only Transformer implemented in PyTorch.
@@ -10,7 +18,7 @@ Neural Complete is evolving from a character-level RNN assignment into a compact
 - Autoregressive text completion with temperature, greedy decoding, top-k sampling, and nucleus sampling.
 - Checkpoint-based training and generation.
 - LLM-style evaluation using validation loss and perplexity.
-- A clear roadmap toward tokenizer experiments, model comparison, and RAG.
+- A roadmap toward tokenizer experiments, model comparison, and retrieval-augmented generation.
 
 ## Current Structure
 
@@ -107,7 +115,7 @@ neural-complete generate \
 
 The same generation command works for RNN and Mini-GPT checkpoints because both expose the same language-modeling interface.
 
-## Roadmap Toward a Strong CV Project
+## Project Roadmap
 
 ### Phase 1: Productionize the RNN Baseline
 
@@ -179,12 +187,6 @@ Use Streamlit or FastAPI to expose:
 - Model comparison.
 - RAG question answering.
 - Training metrics.
-
-## CV Description
-
-Suggested CV bullet:
-
-> Built an end-to-end PyTorch language-modeling project evolving from a scratch character RNN to a compact GPT-style Transformer, including causal self-attention, autoregressive decoding, top-k/top-p sampling, perplexity evaluation, checkpointing, and a roadmap toward tokenization experiments and RAG.
 
 ## Original Experiment Summary
 
