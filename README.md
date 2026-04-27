@@ -18,7 +18,6 @@ The RNN baseline shows the limits of simple recurrent models, while the Mini-GPT
 - Autoregressive text completion with temperature, greedy decoding, top-k sampling, and nucleus sampling.
 - Checkpoint-based training and generation.
 - LLM-style evaluation using validation loss and perplexity.
-- A roadmap toward tokenizer experiments, model comparison, and retrieval-augmented generation.
 
 ## Current Structure
 
@@ -115,78 +114,13 @@ neural-complete generate \
 
 The same generation command works for RNN and Mini-GPT checkpoints because both expose the same language-modeling interface.
 
-## Project Roadmap
+## Next Steps
 
-### Phase 1: Productionize the RNN Baseline
-
-This phase is now started. The project has reusable modules, a CLI, checkpoints, decoding controls, and perplexity evaluation.
-
-Useful next improvements:
-
-- Add plots for train/validation loss.
-- Save metrics to JSON.
-- Add unit tests for tokenization, sampling, and generation.
-- Add experiment configs for different corpora.
-
-### Phase 2: Expand the Mini-GPT Transformer
-
-This phase is now started. The project has a decoder-only Transformer with:
-
-- Token embeddings and positional embeddings.
-- Multi-head causal self-attention.
-- Feed-forward blocks.
-- Residual connections and LayerNorm.
-- Autoregressive generation with the same decoding controls.
-
-Useful next improvements:
-
-- Add attention visualization.
-- Add model parameter counts and training-time comparisons.
-- Add a stronger experiment on a real corpus.
-- Add a writeup comparing RNN limitations with Transformer attention.
-
-### Phase 3: Add Tokenization Experiments
-
-Compare character-level modeling with subword tokenization:
-
-- Character tokenizer baseline.
-- Byte-pair encoding or Hugging Face tokenizer.
-- Vocabulary size comparison.
-- Sequence length and perplexity comparison.
-
-### Phase 4: Add Model Comparison
-
-Compare the original scratch RNN, a stronger recurrent baseline such as GRU or LSTM, and the Mini-GPT model.
-
-Track:
-
-- Validation loss.
-- Perplexity.
-- Sample quality.
-- Repetition rate.
-- Training time.
-
-### Phase 5: Add RAG
-
-Build a retrieval-augmented generation demo over a text corpus:
-
-- Chunk source documents.
-- Embed chunks with a sentence-transformer model.
-- Store embeddings in FAISS or Chroma.
-- Retrieve relevant chunks for a query.
-- Construct a grounded answer with citations.
-
-This adds applied LLM engineering concepts beyond model training.
-
-### Phase 6: Add a Demo App
-
-Use Streamlit or FastAPI to expose:
-
-- Text completion.
-- Sampling controls.
-- Model comparison.
-- RAG question answering.
-- Training metrics.
+- Compare RNN and Mini-GPT results on the same text corpus.
+- Add plots for training loss, validation loss, and perplexity.
+- Save experiment metrics to JSON for easier comparison.
+- Add attention visualization for the Mini-GPT model.
+- Add subword tokenization experiments.
 
 ## Original Experiment Summary
 
